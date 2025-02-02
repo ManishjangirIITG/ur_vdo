@@ -1,0 +1,21 @@
+.video-player-container {
+    width: 100%;
+    max-width: 1000px;
+    margin: 0 auto;
+    background: #000;
+}
+
+.video-player {
+    width: 100%;
+    height: auto;
+    max-height: 80vh;
+    object-fit: contain;
+}
+
+video::-webkit-media-controls {
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
+video::-webkit-media-controls-panel {
+    padding: 10px;
+} 
