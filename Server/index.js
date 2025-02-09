@@ -13,15 +13,17 @@ import { GridFSBucket } from 'mongodb';
 import { conn } from './db.js';
 import { errorHandler } from './middleware/error.js';
 import fileUpload from "express-fileupload";
+import Ffmpeg from "fluent-ffmpeg";
+// import Video from "../Server/models/Video.js"
 
 dotenv.config(); // Ensure this is at the top to load environment variables
 const app = express();
 
 // Connect to MongoDB first
 mongoose.connect(process.env.DB_URL, {
-    serverSelectionTimeoutMS: 15000,
-    socketTimeoutMS: 45000,
-    connectTimeoutMS: 15000,
+    serverSelectionTimeoutMS: 90000,
+    socketTimeoutMS: 150000,
+    connectTimeoutMS: 90000,
 })
     .then(() => {
         console.log('Connected to MongoDB successfully');
@@ -29,7 +31,7 @@ mongoose.connect(process.env.DB_URL, {
     .catch((err) => {
         console.error('MongoDB connection error:', err);
         process.exit(1);
-    });
+});
 
 // CORS configuration with specific options
 app.use(cors({
@@ -56,9 +58,9 @@ if (!fs.existsSync(uploadsDir)) {
 app.use('/uploads', (req, res) => {
     const filename = req.url.split('/').pop();
     const filePath = path.join(__dirname, 'uploads', filename);
-    
+
     console.log('Requested video:', filename);
-    
+
     if (!fs.existsSync(filePath)) {
         return res.status(404).send('Video not found');
     }
@@ -72,9 +74,9 @@ app.use('/uploads', (req, res) => {
         const start = parseInt(parts[0], 10);
         const end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1;
         const chunksize = end - start + 1;
-        
+
         const stream = fs.createReadStream(filePath, { start, end });
-        
+
         res.writeHead(206, {
             'Content-Range': `bytes ${start}-${end}/${fileSize}`,
             'Accept-Ranges': 'bytes',
@@ -83,7 +85,7 @@ app.use('/uploads', (req, res) => {
             'Access-Control-Allow-Origin': 'http://localhost:3000',
             'Cross-Origin-Resource-Policy': 'cross-origin'
         });
-        
+
         stream.pipe(res);
     } else {
         res.writeHead(200, {
@@ -151,6 +153,59 @@ app.get('/check-video/:filename', (req, res) => {
         });
     }
 });
+
+app.get('/video/videos', async (req, res) => {
+    try {
+        const videos = await videofiles.find({})
+            .select('videotitle description filename filepath filetype filesize uploadedBy videochanel views likes createdAt updatedAt')
+            .populate('uploadedBy', 'name')
+            .sort({ createdAt: -1 });
+
+        console.log('Videos fetched:', videos);
+        res.status(200).json(videos);
+    } catch (error) {
+        console.error('Error fetching videos:', error);
+        res.status(500).json({ message: 'Error fetching videos', error: error.toString() });
+    }
+});
+// app.get('/api/video/:id', async (req, res) => {
+//     const video = await Video.findById(req.params.id);
+//     if (!video) return res.status(404).send('Video not found');
+//     res.json(video);
+// });
+
+app.get('/api/video/:id/:quality', (req, res) => {
+    const { id, quality } = req.params;
+    const videoPath = `./uploads/${id}_${quality}.mp4`;
+
+    const stat = fs.statSync(videoPath);
+    const fileSize = stat.size;
+    const range = req.headers.range;
+
+    if (range) {
+        const parts = range.replace(/bytes=/, "").split("-");
+        const start = parseInt(parts[0], 10);
+        const end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1;
+        const chunksize = (end - start) + 1;
+        const file = fs.createReadStream(videoPath, { start, end });
+        const head = {
+            'Content-Range': `bytes ${start}-${end}/${fileSize}`,
+            'Accept-Ranges': 'bytes',
+            'Content-Length': chunksize,
+            'Content-Type': 'video/mp4',
+        };
+        res.writeHead(206, head);
+        file.pipe(res);
+    } else {
+        const head = {
+            'Content-Length': fileSize,
+            'Content-Type': 'video/mp4',
+        };
+        res.writeHead(200, head);
+        fs.createReadStream(videoPath).pipe(res);
+    }
+});
+
 
 // Add a route to check video availability
 app.get('/video/check/:filename', (req, res) => {

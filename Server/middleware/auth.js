@@ -1,7 +1,11 @@
 import jwt from 'jsonwebtoken'
 import User from '../models/auth.js'
 
+
 const auth = async (req, res, next) => {
+  res.setHeader('Access-Control-Allow-Origin', 'http://localhost:3000');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Range');
   try {
     const token = req.headers.authorization?.split(' ')[1];
     

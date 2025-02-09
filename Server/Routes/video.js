@@ -9,72 +9,137 @@ import upload from "../Helper/filehelper.js";
 import auth from "../middleware/auth.js"
 import path from 'path';
 import fs from 'fs';
+import Video from '../models/Video.js'
+import mongoose from "mongoose";
+import videofile from "../models/videofile.js";
+import cors from 'cors'
 
 const routes = express.Router();
+// const videofiles = mongoose.model('videofiles')
 
-// Video listing and streaming
-// routes.get("/videos", async (req, res) => {
-//   try {
-//       const uploadsDir = path.join(process.cwd(), 'uploads');
-//       const files = fs.readdirSync(uploadsDir)
-//           .filter(file => file.match(/\.(mp4|webm|mov)$/i))
-//           .map(file => ({
-//               filename: file,
-//               filepath: `/video/${file}`,
-//               title: file.split('.')[0],
-//               createdAt: fs.statSync(path.join(uploadsDir, file)).ctime
-//           }));
-//       res.json(files);
-//   } catch (error) {
-//       res.status(500).json({ message: error.message });
-//   }
-// });
-routes.get("/videos", getvideos);
-routes.get("/stream/:filename", (req, res) => {
+// Get all videos
+routes.get('/', async (req, res) => {
     try {
-        const filename = req.params.filename;
-        const filePath = path.join(process.cwd(), 'uploads', filename);
-        
-        console.log('Streaming video:', filename);
-        
+        const videos = await videofile.find()
+            .populate('uploadedBy', 'username')
+            .sort({ createdAt: -1 });
+        res.json(videos);
+    } catch (error) {
+        console.error('Error fetching videos:', error);
+        res.status(500).json({ message: 'Error fetching videos' });
+    }
+});
+routes.get('/videos', getvideos)
+
+// routes.get('/details/:videoId', async (req, res) => {
+//     try {
+//         const { videoId } = req.params; // ✅ Fix: Get videoId correctly
+//         console.log("Fetching video from database for ID:", videoId);
+
+//         const video = await Video.findById(videoId); // ✅ Ensure `Video` model is used
+
+//         if (!video) {
+//             console.error("Video not found for ID:", videoId);
+//             return res.status(404).json({ message: "Video not found" });
+//         }
+
+//         console.log("Video found:", video);
+//         res.json(video);
+//     } catch (error) {
+//         console.error("Error fetching video details:", error);
+//         res.status(500).json({ message: "Internal Server Error" });
+//     }
+// });
+
+routes.get('/details/:filename', async (req, res) => {
+    try {
+        const { filename } = req.params;
+        const video = await videofile.findOne({ filename: filename });
+
+        if (!video) {
+            return res.status(404).json({ error: 'Video not found' });
+        }
+
+        res.json(video);
+    } catch (error) {
+        console.error('Database error:', error);
+        res.status(500).json({
+            error: 'Server error',
+            message: error.message
+        });
+    }
+});
+
+routes.options('/stream/:baseFilename/:quality', cors());
+routes.get('/stream/:baseFilename/:quality', cors(), (req, res) => {
+    try {
+        const { baseFilename, quality } = req.params;
+        const validQualities = ['original', '480p', '720p', '1080p'];
+
+        if (!validQualities.includes(quality)) {
+            return res.status(400).json({
+                error: 'Invalid quality format',
+                validQualities
+            });
+        }
+
+        const videoFilename = quality === 'original'
+            ? `${baseFilename}.mp4`
+            : `${baseFilename}_${quality}.mp4`;
+
+        const filePath = path.join(process.cwd(), 'uploads', videoFilename);
+
         if (!fs.existsSync(filePath)) {
-            return res.status(404).json({ message: "Video not found" });
+            return res.status(404).json({
+                error: 'Requested quality not available',
+                suggestedQuality: 'original'
+            });
         }
 
         const stat = fs.statSync(filePath);
         const fileSize = stat.size;
         const range = req.headers.range;
 
-        res.setHeader('Access-Control-Allow-Origin', 'http://localhost:3000');
-        res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+        res.header({
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Methods': 'GET, HEAD',
+            'Access-Control-Expose-Headers': 'Content-Length,Content-Range',
+            'Cross-Origin-Resource-Policy': 'cross-origin',
+            'Content-Type': 'video/mp4',
+            'Accept-Ranges': 'bytes'
+        });
 
         if (range) {
-            const parts = range.replace(/bytes=/, "").split("-");
+            const parts = range.replace(/bytes=/, '').split('-');
             const start = parseInt(parts[0], 10);
             const end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1;
-            const chunksize = (end - start) + 1;
+
+            const chunksize = end - start + 1;
             const file = fs.createReadStream(filePath, { start, end });
-            const head = {
+
+            res.writeHead(206, {
                 'Content-Range': `bytes ${start}-${end}/${fileSize}`,
-                'Accept-Ranges': 'bytes',
-                'Content-Length': chunksize,
-                'Content-Type': 'video/mp4',
-            };
-            res.writeHead(206, head);
+                'Content-Length': chunksize
+            });
+
             file.pipe(res);
         } else {
-            const head = {
-                'Content-Length': fileSize,
-                'Content-Type': 'video/mp4',
-            };
-            res.writeHead(200, head);
+            res.writeHead(200, {
+                'Content-Length': fileSize
+            });
             fs.createReadStream(filePath).pipe(res);
         }
+
     } catch (error) {
-        console.error('Error streaming video:', error);
-        res.status(500).json({ message: 'Error streaming video' });
+        console.error('Streaming error:', error);
+        res.status(500).json({
+            error: 'Internal server error',
+            details: process.env.NODE_ENV === 'development' ? error.message : null
+        });
     }
 });
+
+
 
 // Video interactions
 routes.patch('/like/:id', auth, likevideocontroller);

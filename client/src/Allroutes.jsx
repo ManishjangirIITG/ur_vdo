@@ -16,7 +16,7 @@ const Allroutes = ({seteditcreatechanelbtn,setvideouploadpage}) => {
     <Routes>
         <Route path='/'element={<Home/>}/>
         <Route path='/search/:Searchquery' element={<Search/>}/>
-        <Route path='/videopage/:vid' element={<Videopage/>}/>
+        <Route path='/video/:filename' element={<Videopage/>}/>
         <Route path='/Library' element={<Library/>}/>
         <Route path='/Likedvideo' element={<Likedvideo/>}/>
         <Route path='/Watchhistory' element={<Watchhistory/>}/>

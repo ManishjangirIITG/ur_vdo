@@ -2,6 +2,7 @@ import logo from './logo.svg';
 import './App.css';
 import React, { useEffect, useState } from "react"
 import Navbar from './Component/Navbar/Navbar';
+import Home from './Pages/Home/Home.jsx';
 import { useDispatch } from 'react-redux';
 import Allroutes from "../src/Allroutes"
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
@@ -15,6 +16,7 @@ import { getallhistory } from './action/history';
 import { getalllikedvideo } from './action/likedvideo';
 import { getallwatchlater } from './action/watchlater';
 import axios from 'axios';
+import Videopage from './Pages/Videopage/Videopage.jsx';
 import VideoList from './Component/VideoList.js';
 import VideoDetail from './Component/VideoDetail.js';
 
@@ -67,7 +69,8 @@ function App() {
     <Router>
       <Routes>
         {/* <Route path="/" element={<VideoList />} /> */}
-        <Route path="/video/:videoId" element={<VideoDetail />} />
+        {/* <Route path="/" /> */}
+        {/* <Route path="/video/:videoId" element={<Videopage />} /> */}
       </Routes>
       {
         videouploadpage && <Videoupload setvideouploadpage={setvideouploadpage} />

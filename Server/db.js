@@ -10,7 +10,7 @@ if (!MONGO_URI) {
 }
 
 const conn = mongoose.createConnection(MONGO_URI, {
-  serverSelectionTimeoutMS: 30000,
+  serverSelectionTimeoutMS: 60000,
   ssl: true, // Required for Atlas
   tlsAllowInvalidCertificates: false // Keep false for production
 });

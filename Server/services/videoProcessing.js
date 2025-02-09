@@ -1,44 +1,37 @@
 import ffmpeg from 'fluent-ffmpeg';
 import path from 'path';
-import fs from 'fs'
+import fs from 'fs';
 
-const qualities = [
-  { name: '1080p', height: 1080, bitrate: '4000k' },
-  { name: '720p', height: 720, bitrate: '2500k' },
-  { name: '480p', height: 480, bitrate: '1000k' },
-  { name: '360p', height: 360, bitrate: '600k' }
-];
+export function processVideo(inputPath, outputPath, quality) {
+  return new Promise((resolve, reject) => {
+    ffmpeg(inputPath)
+      .outputOptions('-vf', `scale=-2:${quality.replace('p', '')}`)
+      .outputOptions('-c:v', 'libx264')
+      .outputOptions('-crf', '23')
+      .outputOptions('-c:a', 'aac')
+      .outputOptions('-b:a', '128k')
+      .output(outputPath)
+      .on('end', () => resolve())
+      .on('error', (err) => reject(err))
+      .run();
+  });
+}
 
-const processVideo = async (inputPath, outputDir, videoId) => {
-  try {
-    // Create output directory if it doesn't exist
-    if (!fs.existsSync(outputDir)) {
-      fs.mkdirSync(outputDir, { recursive: true });
-    }
+export async function processAllQualities(inputPath, baseOutputPath, qualities) {
+  const qualityFiles = [];
+  const fileExt = path.extname(inputPath);
 
-    const processPromises = qualities.map(quality => {
-      return new Promise((resolve, reject) => {
-        const outputPath = path.join(outputDir, `${videoId}_${quality.name}.mp4`);
-        
-        ffmpeg(inputPath)
-          .size(`?x${quality.height}`)
-          .videoBitrate(quality.bitrate)
-          .format('mp4')
-          .on('end', () => resolve({
-            quality: quality.name,
-            path: outputPath
-          }))
-          .on('error', (err) => reject(err))
-          .save(outputPath);
-      });
+  for (const quality of qualities) {
+    const qualityFilename = `${path.parse(baseOutputPath).name}_${quality}${fileExt}`;
+    const outputPath = path.join(path.dirname(baseOutputPath), qualityFilename);
+    
+    await processVideo(inputPath, outputPath, quality);
+    qualityFiles.push({
+      quality,
+      filename: qualityFilename,
+      filepath: `/uploads/${qualityFilename}`
     });
-
-    const results = await Promise.all(processPromises);
-    return results;
-  } catch (error) {
-    console.error('Error processing video:', error);
-    throw error;
   }
-};
 
-module.exports = { processVideo }; 
+  return qualityFiles;
+}

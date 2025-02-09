@@ -1,86 +1,64 @@
-import React, { useEffect } from 'react';
-import "./Videopage.css";
-import moment from 'moment';
-import Likewatchlatersavebtns from './Likewatchlatersavebtns';
-import { useParams, Link } from 'react-router-dom';
-import Comment from '../../Component/Comment/Comment.jsx';
-import { viewvideo } from '../../action/video.js';
-import { addtohistory } from '../../action/history.js';
+import React, { useEffect, useState } from 'react';
+import { useParams } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import VideoPlayer from '../../Component/VideoPlayer.js';
+import { viewvideo } from '../../action/video.js';
 
 const Videopage = () => {
-    const { vid } = useParams();
-    const dispatch = useDispatch();
-    
-    const { currentVideo: vv, loading, error } = useSelector(state => state.video);
-    const currentuser = useSelector(state => state.currentuserreducer);
+  const { filename } = useParams();
+  const dispatch = useDispatch();
+  const [selectedQuality, setSelectedQuality] = useState('720p');
 
-    useEffect(() => {
-        if (vid) {
-            dispatch(viewvideo(vid));
-        }
-    }, [vid, dispatch]);
+  const { currentVideo, loading, error } = useSelector(state => ({
+    currentVideo: state.video.currentVideo,
+    loading: state.video.loading,
+    error: state.video.error
+  }));
 
-    useEffect(() => {
-        if (currentuser && vv) {
-            dispatch(addtohistory({
-                videoid: vid,
-                viewer: currentuser?.result._id,
-            }));
-        }
-    }, [currentuser, vv, vid, dispatch]);
+  const baseFilename = currentVideo?.filename?.replace(/\.[^/.]+$/, "");
 
-    if (loading) {
-        return <div>Loading...</div>;
+  useEffect(() => {
+    if (filename) {
+      dispatch(viewvideo(filename));
     }
+  }, [filename, dispatch]);
 
-    if (error) {
-        return <div>Error: {error}</div>;
-    }
+  if (loading) return <div>Loading...</div>;
+  if (error) return <div>Error: {error}</div>;
+  if (!currentVideo) return <div>Video not found</div>;
 
-    if (!vv) {
-        return <div>Video not found. Please check the URL or try again later.</div>;
-    }
+  return (
+    <div className="video-container">
+      {/* <video src={`http://localhost:5000/video/stream/${baseFilename}/720p`} controls></video> */}
+      <div className="quality-controls">
+        <select
+          value={selectedQuality}
+          onChange={(e) => setSelectedQuality(e.target.value)}
+          className="quality-select"
+        >
+          <option value="480p">480p</option>
+          <option value="720p">720p</option>
+          <option value="1080p">1080p</option>
+        </select>
+      </div>
 
-    return (
-        <div className="container_videoPage">
-            <div className="container2_videoPage">
-                <div className="video_display_screen_videoPage">
-                    {vv?.filepath && (
-                        <VideoPlayer 
-                            videoPath={vv.filepath.split(/[/\\]/).pop()}
-                        />
-                    )}
-                    <div className="video_details_videoPage">
-                        <div className="video_btns_title_VideoPage_cont">
-                            <p className="video_title_VideoPage">{vv?.title}</p>
-                            <div className="views_date_btns_VideoPage">
-                                <div className="views_videoPage">
-                                    {vv?.views} views <div className="dot"></div>{" "}
-                                    {moment(vv?.createdat).fromNow()}
-                                </div>
-                                <Likewatchlatersavebtns vv={vv} vid={vid} />
-                            </div>
-                        </div>
-                        {vv?.uploader && (
-                            <Link to={'/'} className='chanel_details_videoPage'>
-                                <b className="chanel_logo_videoPage">
-                                    <p>{vv.uploader.charAt(0).toUpperCase()}</p>
-                                </b>
-                                <p className="chanel_name_videoPage">{vv.uploader}</p>
-                            </Link>
-                        )}
-                        <div className="comments_VideoPage">
-                            <h2><u>Comments</u></h2>
-                            <Comment videoid={vv._id} />
-                        </div>
-                    </div>
-                </div>
-                <div className="moreVideoBar">More videos</div>
-            </div>
-        </div>
-    );
+      <VideoPlayer
+        baseFilename={baseFilename}
+        quality={selectedQuality}
+      />
+
+      <h1>{currentVideo.videotitle}</h1>
+      <div className="metadata">
+        <span>{currentVideo.views} views</span>
+        <span>
+          Uploaded {new Date(currentVideo.createdAt).toLocaleDateString()}
+        </span>
+      </div>
+      <div className="description">
+        {currentVideo.description}
+      </div>
+    </div>
+  );
 };
 
 export default Videopage;

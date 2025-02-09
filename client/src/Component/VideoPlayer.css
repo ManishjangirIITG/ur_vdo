@@ -1,21 +1,16 @@
-.video-player-container {
+/* Ensure proper video scaling */
+.video-js {
     width: 100%;
-    max-width: 1000px;
-    margin: 0 auto;
-    background: #000;
-}
-
-.video-player {
+    height: 0;
+    padding-top: 56.25%; /* 16:9 aspect ratio */
+    position: relative;
+  }
+  
+  .video-js .vjs-tech {
+    position: absolute;
+    top: 0;
+    left: 0;
     width: 100%;
-    height: auto;
-    max-height: 80vh;
-    object-fit: contain;
-}
-
-video::-webkit-media-controls {
-    background-color: rgba(0, 0, 0, 0.5);
-}
-
-video::-webkit-media-controls-panel {
-    padding: 10px;
-} 
+    height: 100%;
+  }
+  

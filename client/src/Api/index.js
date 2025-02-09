@@ -5,28 +5,22 @@ const BASE_URL = 'http://localhost:5000';
 // Create API instance
 export const API = axios.create({
   baseURL: BASE_URL,
-  timeout: 15000, // Increase timeout to 15 seconds
-  retry: 3,
-  retryDelay: 1000,
-  withCredentials: true // Enable credentials
+  timeout: 30000, // Increase timeout to 30 seconds
+  maxRedirects: 5,
+  withCredentials: true
 });
 
 // Add this near the top of your file
 const pendingRequests = new Map();
 
-// Modify your request interceptor
 API.interceptors.request.use((config) => {
-  const requestKey = `${config.method}:${config.url}`;
-  
+  const requestKey = `${config.method}:${config.url}:${JSON.stringify(config.data)}`;
   if (pendingRequests.has(requestKey)) {
-    // Return the existing promise for this request
     return Promise.reject({
       __CANCEL__: true,
       promise: pendingRequests.get(requestKey)
     });
   }
-
-  // Store the promise for this request
   const promise = new Promise((resolve) => {
     config.__resolveRequest = resolve;
   });
@@ -40,9 +34,8 @@ API.interceptors.request.use((config) => {
   return Promise.reject(error);
 });
 
-// Modify your response interceptor
 API.interceptors.response.use((response) => {
-  const requestKey = `${response.config.method}:${response.config.url}`;
+  const requestKey = `${response.config.method}:${response.config.url}:${JSON.stringify(response.config.data)}`;
   const promise = pendingRequests.get(requestKey);
   if (promise && response.config.__resolveRequest) {
     response.config.__resolveRequest(response);
@@ -53,74 +46,124 @@ API.interceptors.response.use((response) => {
   if (error.__CANCEL__) {
     return error.promise;
   }
-
   const { config, response } = error;
-  
   if (!response && error.code === 'ERR_NETWORK') {
     console.error('Network error - please check if the server is running on', BASE_URL);
-    // You could dispatch an action here to show a global error message
   }
-
   if (!config || !config.retry) {
     return Promise.reject(error);
   }
-
   config.retry -= 1;
-
   if (config.retry === 0) {
     return Promise.reject(error);
   }
-
   const delayRetryRequest = new Promise((resolve) => {
     setTimeout(() => {
       console.log('Retrying request...');
       resolve();
-    }, config.retryDelay || 1000);
+    }, config.retryDelay || 3000);
   });
-
   return delayRetryRequest.then(() => API(config));
 });
 
+// In index.js API configuration
+API.interceptors.response.use(null, async (error) => {
+  if (error.config && error.response?.status === 404) {
+    const originalRequest = error.config;
+    originalRequest.retryCount = (originalRequest.retryCount || 0) + 1;
+
+    if (originalRequest.retryCount <= 3) {
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      return API(originalRequest);
+    }
+  }
+  return Promise.reject(error);
+});
+
+
+export const uploadVideo = async (formData) => {
+  try {
+    const profileData = localStorage.getItem('Profile');
+    if (!profileData) {
+      throw new Error('No authentication data found');
+    }
+    const { token } = JSON.parse(profileData);
+    const config = {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'multipart/form-data'
+      },
+      onUploadProgress: (progressEvent) => {
+        const progress = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+        console.log('Upload Progress:', progress);
+      },
+      maxContentLength: 100 * 1024 * 1024,
+      maxBodyLength: 100 * 1024 * 1024
+    };
+    const response = await API.post('/video/uploadvideo', formData, config);
+    return response.data;
+  } catch (error) {
+    console.error('Upload error:', error);
+    if (error.response?.status === 413) {
+      throw new Error('File size too large. Maximum size is 100MB.');
+    }
+    throw error;
+  }
+};
+
+export const streamVideo = (filename) => {
+  return API.get(`/video/stream/${filename}`, {
+    responseType: 'blob', // Ensure correct response type
+    headers: { 'Range': 'bytes=0-' }
+  });
+};
+
+try {
+  const response = await API.get("/video/videos");
+  console.log('response form api/index.js', response)
+} catch (error) {
+  if (error.response) {
+    console.error("Server responded with an error:", error.response.data);
+  } else if (error.request) {
+    console.error("No response received:", error.request);
+  } else {
+    console.error("Error setting up request:", error.message);
+  }
+}
+
+export const streamVideoWithQuality = (filename, quality) => {
+  const endpoint = quality ? `/stream/${filename}/${quality}` : `/stream/${filename}`;
+  return API.get(endpoint, {
+    responseType: 'stream',
+    headers: {
+      'Range': 'bytes=0-'
+    }
+  });
+};
+
+export const streamVideoRange = (filename, start, end) => {
+  return API.get(`video/stream/${filename}`, {
+    headers: {
+      Range: `bytes=${start}-${end}`
+    },
+    responseType: 'arraybuffer'
+  });
+};
+
+export const getvideodetails = (filename) => API.get(`video/details/${filename}`);
 export const login = (authdata) => API.post("/user/login", authdata);
 export const updatechaneldata = (id, updatedata) => API.patch(`/user/update/${id}`, updatedata)
 export const fetchallchannel = () => API.get("/user/getallchannel");
 
-export const uploadVideo = async (formData) => {
-    try {
-        const profileData = localStorage.getItem('Profile');
-        if (!profileData) {
-            throw new Error('No authentication data found');
-        }
-
-        const { token } = JSON.parse(profileData);
-        
-        const config = {
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'multipart/form-data'
-            },
-            onUploadProgress: (progressEvent) => {
-                const progress = Math.round((progressEvent.loaded * 100) / progressEvent.total);
-                console.log('Upload Progress:', progress);
-            },
-            maxContentLength: 100 * 1024 * 1024, // 100MB limit
-            maxBodyLength: 100 * 1024 * 1024 // 100MB limit
-        };
-
-        const response = await API.post('/video/uploadvideo', formData, config);
-        return response.data;
-    } catch (error) {
-        console.error('Upload error:', error);
-        if (error.response?.status === 413) {
-            throw new Error('File size too large. Maximum size is 100MB.');
-        }
-        throw error;
-    }
-};
-
 export const getvideos = () => API.get("/video/videos");
+
 export const likevideo = (id, Like) => API.patch(`/video/like/${id}`, { Like });
 export const viewsvideo = (id) => API.patch(`/video/view/${id}`);
+export const viewvideo = (filename, quality) => API.get(`/video/stream/${filename}/${quality}`);
+export const getVideoStream = (baseFilename, quality) =>
+  API.get(`/video/stream/${baseFilename}/${quality}`, {
+    responseType: 'blob' // Important for streaming
+  });
 
 export const postcomment = (commentdata) => API.post('/comment/post', commentdata)
 export const deletecomment = (id) => API.delete(`/comment/delete/${id}`)
@@ -138,3 +181,17 @@ export const deletelikedvideo = (videoid, viewer) => API.delete(`/video/deleteli
 export const addtowatchlater = (watchlaterdata) => API.post('/video/watchlater', watchlaterdata)
 export const getallwatchlater = () => API.get('/video/getallwatchlater')
 export const deletewatchlater = (videoid, viewer) => API.delete(`/video/deletewatchlater/${videoid}/${viewer}`)
+
+// API.interceptors.response.use(
+//   (response) => response,
+//   (error) => {
+//     if (error.response && error.response.status === 404) {
+//       console.error('Video not found');
+//       // Handle 404 error (e.g., show a user-friendly message)
+//     } else if (error.code === 'ECONNABORTED') {
+//       console.error('Request timed out');
+//       // Handle timeout error
+//     }
+//     return Promise.reject(error);
+//   }
+// );

@@ -1,53 +1,45 @@
-import React, { useEffect } from 'react';
-import { useSelector, useDispatch } from 'react-redux';
-import { getallvideo } from '../../action/video';
+import React from 'react';
+import { Link } from 'react-router-dom';
 import Leftsidebar from '../../Component/Leftsidebar/Leftsidebar';
-import VideoList from '../../Component/VideoList.js';
-import "./Home.css";
+import VideoList from '../../Component/VideoList.js'; // Import VideoList component
+import './Home.css'
 
 const Home = () => {
-  const dispatch = useDispatch();
-  const { videos, loading, error } = useSelector((state) => state.video);
-
-  useEffect(() => {
-    dispatch(getallvideo());
-  }, [dispatch]);
-
-  if (loading) {
-    return <p>Loading videos...</p>;
-  }
-
-  if (error) {
-    return <p>Error: {error}</p>;
-  }
-
-  const filteredVids = videos?.filter(q => q).reverse();
-
-  const navlist = [
-    "All",
-    "Python",
-    "Java",
-    "C++",
-    "Movies",
-    "Science",
-    "Animation",
-    "Gaming",
-    "Comedy"
-  ];
-
   return (
-    <div className="container_Pages_App">
+    <div className="home_container"> 
       <Leftsidebar />
-      <div className="container2_Pages_App">
-        <div className="navigation_Home">
-          {navlist.map((m) => (
-            <p key={m} className='btn_nav_home'>{m}</p>
-          ))}
-        </div>
-        {filteredVids ? <VideoList videos={filteredVids} /> : <p>No videos found.</p>}
+      <div className="video_container">
+        <VideoList 
+        //   listClassName="video_grid"
+        //   itemClassName="video_box"
+        //   renderItem={(video) => (
+        //     <>
+        //       <Link to={`/video/${video?.filename}`}>
+        //         <video muted src={video?.videoUrl} />
+        //       </Link>
+        //       <div className="video_details">
+        //         <h3>{video?.title || 'Untitled Video'}</h3>
+        //         <p>{video?.description}</p>
+        //         <div className="video_meta">
+        //           <span>Views: {video?.views || 0}</span>
+        //           {video?.createdAt && (
+        //             <span> • {new Date(video.createdAt).toLocaleDateString()}</span>
+        //           )}
+        //         </div>
+        //       </div>
+        //     </>
+        //   )}
+          emptyComponent={
+            <div className="empty_state">
+              <h3>No videos found</h3>
+              <p>Upload your first video to get started</p>
+            </div>
+          }
+        />
       </div>
     </div>
   );
 };
 
 export default Home;
+

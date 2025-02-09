@@ -1,19 +1,33 @@
-.navigation_Home{
-    color: white;
-    background-color: rgb(37,37,37);
-    position: sticky;
+.home_container {
     display: flex;
-    overflow-x: auto;
-    top: 0;
-    border-bottom: 2px solid rgb(128,128,128,0.27);
+    min-height: 100vh;
+    background-color: #0f0f0f;
+    color: white;
 }
-.btn_nav_home{
-    background-color: rgb(46,46,46);
-    margin: 0.5rem;
-    padding: 0.5rem;
-    border-radius: 45px;
+
+.main_content {
+    flex: 1;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.get_started {
+    text-align: center;
+    padding: 40px;
+    background-color: #1a1a1a;
+    border-radius: 12px;
+    margin-top: auto; /* Pushes content to bottom */
+}
+
+.upload_button {
+    background-color: #065fd4;
+    color: white;
+    padding: 12px 24px;
+    border: none;
+    border-radius: 24px;
     cursor: pointer;
-}
-.btn_nav_home:hover{
-    background-color: rgb(128,128,128);
+    font-size: 16px;
+    margin-top: 20px;
 }

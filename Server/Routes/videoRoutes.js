@@ -1,9 +1,10 @@
 import express from 'express'
-import { processVideo } from '../services/videoProcessing';
+import { processAllQualities } from '../services/videoProcessing.js';
 import Video from '../models/Video.js'
 import auth from '../middleware/auth.js';
 import path from 'path';
 import fs from 'fs'
+import videofile from '../models/videofile.js'
 
 const router = express.Router();
 // Upload video
@@ -22,10 +23,10 @@ router.post('/upload', auth, async (req, res) => {
     await videoFile.mv(tempPath);
 
     // Process video into different qualities
-    const processedVideos = await processVideo(
-      tempPath,
-      path.join(uploadDir, videoId.toString()),
-      videoId
+    const processedVideos = await processAllQualities(
+      file.path,
+      path.join(uploadDir, uniqueFilename),
+      qualities
     );
 
     // Create video document
@@ -55,7 +56,7 @@ router.get('/stream/:videoId', async (req, res) => {
     const { videoId } = req.params;
     const { quality = '720p' } = req.query;
 
-    const video = await Video.findById(videoId);
+    const video = await videofile.findById(videoId);
     if (!video) {
       return res.status(404).json({ message: 'Video not found' });
     }
@@ -98,7 +99,7 @@ router.get('/stream/:videoId', async (req, res) => {
 // Get video details
 router.get('/:videoId', async (req, res) => {
   try {
-    const video = await Video.findById(req.params.videoId)
+    const video = await videofile.findById(req.params.videoId)
       .populate('uploadedBy', 'username');
     
     if (!video) {
@@ -114,7 +115,7 @@ router.get('/:videoId', async (req, res) => {
 // Get all videos
 router.get('/', async (req, res) => {
   try {
-    const videos = await Video.find()
+    const videos = await videofile.find()
       .populate('uploadedBy', 'username')
       .sort({ createdAt: -1 });
     res.json(videos);

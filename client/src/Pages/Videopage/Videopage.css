@@ -1,4 +1,4 @@
-.container_videoPage {
+.videopage-container {
     height: calc(100vh - 3.4rem);
     overflow-y: auto;
     background-color: rgb(11, 11, 11);
