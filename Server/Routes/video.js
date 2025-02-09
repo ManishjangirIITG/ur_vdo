@@ -54,7 +54,8 @@ routes.get('/videos', getvideos)
 routes.get('/details/:filename', async (req, res) => {
     try {
         const { filename } = req.params;
-        const video = await videofile.findOne({ filename: filename });
+        const video = await videofile.findOneAndUpdate({ filename: filename },{ $inc: { views: 1 } },
+            { new: true });
 
         if (!video) {
             return res.status(404).json({ error: 'Video not found' });

@@ -29,7 +29,6 @@ const Videopage = () => {
 
   return (
     <div className="video-container">
-      {/* <video src={`http://localhost:5000/video/stream/${baseFilename}/720p`} controls></video> */}
       <div className="quality-controls">
         <select
           value={selectedQuality}
