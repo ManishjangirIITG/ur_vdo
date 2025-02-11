@@ -1,79 +1,86 @@
-.video-container {
-    height: calc(100vh - 3.4rem);
-    overflow-y: auto;
-    background-color: rgb(11, 11, 11);
-    color: white;
-  }
-  .container2_videoPage {
-    margin: 1.5rem 4.5rem;
-    display: flex;
-  }
-  .video_display_screen_videoPage {
-    width: calc(100vw - 4.5rem - 35vw);
+/* Base container fixes */
+.video-page-container {
+  max-width: 1200px;
+  margin: 2rem auto;
+  padding: 1.5rem;
+  background: #1a1a1a;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+  position: relative; /* Added for proper child positioning */
+}
+
+/* Video wrapper fixes */
+.video-player-wrapper {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16/9;
+  background: #000;
+  border-radius: 12px;
+  overflow: hidden;
+  margin: 1rem 0;
+}
+
+/* Quality selector corrections */
+.quality-selector {
+  position: absolute;
+  bottom: 1rem;
+  right: 1rem;
+  z-index: 1000; /* Increased for overlay priority */
+  display: flex;
+  gap: 0.8rem;
+  flex-wrap: wrap-reverse; /* Allow button wrapping */
+  justify-content: flex-end;
+}
+
+.quality-button {
+  background: rgba(0,0,0,0.7);
+  color: #fff;
+  border: none;
+  padding: 0.6rem 1.2rem;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(4px);
+  font-size: 0.9rem;
+  min-width: 70px; /* Prevent size jumping */
+}
+
+.quality-button:hover {
+  background: rgba(255,255,255,0.15);
+}
+
+.quality-button.active {
+  background: #007bff;
+  box-shadow: 0 2px 8px rgba(0,123,255,0.3);
+}
+
+/* Metadata spacing fix */
+.video_metadata {
+  display: flex;
+  margin: 1.5rem 0;
+  padding: 0 0.5rem;
+}
+
+/* Error message z-index fix */
+.error-message {
+  z-index: 2000;
+  position: relative;
+}
+
+/* Mobile responsive fixes */
+@media (max-width: 768px) {
+  .video-page-container {
+    margin: 0;
+    border-radius: 0;
     padding: 1rem;
   }
   
-  .video_ShowVideo_videoPage {
-    padding: 0.1rem;
-    height: 70vh;
-    width: 100%;
-    background-color: black;
-    border: 1px solid rgba(37, 37, 37, 0.2);
+  .video-player-wrapper {
+    border-radius: 0;
   }
   
-  .video_btns_title_VideoPage_cont {
-    border-bottom: 3px solid rgba(245, 222, 179, 0.175);
-    flex-grow: 1;
+  .quality-button {
+    padding: 0.5rem 1rem;
+    min-width: 60px;
   }
-  .video_title_VideoPage {
-    font-size: x-large;
-    margin: 0;
-    padding: 1rem 0.8rem;
-  }
-  .views_date_btns_VideoPage {
-    display: flex;
-    margin: 0.5rem 1rem;
-    width: calc(100vw - 6.5rem - 35vw);
-  }
-  .views_videoPage {
-    display: flex;
-    font-size: 0.8rem;
-    flex-grow: 1;
-    align-items: center;
-  }
-  
-  .chanel_details_videoPage {
-    border-bottom: 3px solid rgba(245, 222, 179, 0.175);
-    display: flex;
-    text-decoration: none;
-    color: aliceblue;
-    font-weight: bolder;
-  }
-  .chanel_logo_videoPage {
-    display: flex;
-    border: 1px solid rgba(0, 0, 0, 0.19);
-    width: 4rem;
-    height: 4rem;
-    margin: 0.5rem;
-    background-color: rgba(255, 255, 255, 0.667);
-    border-radius: 100%;
-  }
-  
-  .chanel_logo_videoPage p {
-    color: black;
-    margin: auto;
-    font-size: xx-large;
-  }
-  .chanel_name_videoPage {
-    font-weight: bolder;
-    margin: auto 1rem;
-    font-size: larger;
-  }
-  .comments_VideoPage{
-      width: 100%;
-      padding-inline-start: 0.5rem;
-  }
-  .moreVideoBar{
-      width: calc(100vw - 4.5rem - 70vw);
-      padding: 0 1rem;
-  }
+}

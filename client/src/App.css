@@ -39,3 +39,6 @@ video {
   background-color: white;
   margin: auto 0.5rem;
 }
+.app-container {
+  min-height: 100vh;
+}

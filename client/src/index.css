@@ -20,3 +20,7 @@ code {
   background-color: grey;
   border-radius: 5rem;
 }
+
+.theme-wrapper {
+  transition: all 0.3s ease;
+}

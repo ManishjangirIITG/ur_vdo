@@ -31,26 +31,6 @@ routes.get('/', async (req, res) => {
 });
 routes.get('/videos', getvideos)
 
-// routes.get('/details/:videoId', async (req, res) => {
-//     try {
-//         const { videoId } = req.params; // ✅ Fix: Get videoId correctly
-//         console.log("Fetching video from database for ID:", videoId);
-
-//         const video = await Video.findById(videoId); // ✅ Ensure `Video` model is used
-
-//         if (!video) {
-//             console.error("Video not found for ID:", videoId);
-//             return res.status(404).json({ message: "Video not found" });
-//         }
-
-//         console.log("Video found:", video);
-//         res.json(video);
-//     } catch (error) {
-//         console.error("Error fetching video details:", error);
-//         res.status(500).json({ message: "Internal Server Error" });
-//     }
-// });
-
 routes.get('/details/:filename', async (req, res) => {
     try {
         const { filename } = req.params;

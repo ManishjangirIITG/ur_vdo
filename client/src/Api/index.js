@@ -160,10 +160,13 @@ export const getvideos = () => API.get("/video/videos");
 export const likevideo = (id, Like) => API.patch(`/video/like/${id}`, { Like });
 export const viewsvideo = (id) => API.patch(`/video/view/${id}`);
 export const viewvideo = (filename, quality) => API.get(`/video/stream/${filename}/${quality}`);
-export const getVideoStream = (baseFilename, quality) =>
+export const getVideoStream = (baseFilename, quality) =>{
   API.get(`/video/stream/${baseFilename}/${quality}`, {
     responseType: 'blob' // Important for streaming
   });
+}
+
+export const get_theme = (ip) => API.get(`/get_theme`)
 
 export const postcomment = (commentdata) => API.post('/comment/post', commentdata)
 export const deletecomment = (id) => API.delete(`/comment/delete/${id}`)

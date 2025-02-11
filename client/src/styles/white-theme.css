@@ -1,0 +1,19 @@
+html.white-theme {
+  --primary-bg: #ffffff !important;
+  --secondary-bg: #f8f9fa !important;
+  --primary-text: #212529 !important;
+  --accent-color: #1a73e8 !important;
+  --border-color: #dee2e6 !important;
+}
+
+html.white-theme body {
+  background: var(--primary-bg) !important;
+  color: var(--primary-text) !important;
+}
+
+html.white-theme .navbar,
+html.white-theme .video-card,
+html.white-theme button {
+  background-color: var(--secondary-bg) !important;
+  border-color: var(--border-color) !important;
+}

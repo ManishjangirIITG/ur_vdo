@@ -16,7 +16,9 @@ root.render(
   <React.StrictMode>
     <Provider store={store}>
       <GoogleOAuthProvider clientId={process.env.REACT_APP_GOOGLE_CLIENT_ID}>
-        <App />
+        <div className="theme-wrapper">
+          <App />
+        </div>
       </GoogleOAuthProvider>
     </Provider>
   </React.StrictMode>

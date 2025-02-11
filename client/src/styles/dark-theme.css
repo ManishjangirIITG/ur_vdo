@@ -1,0 +1,19 @@
+html.dark-theme {
+  --primary-bg: #181818 !important;
+  --secondary-bg: #202020 !important;
+  --primary-text: #ffffff !important;
+  --accent-color: #3ea6ff !important;
+  --border-color: #303030 !important;
+}
+
+html.dark-theme body {
+  background: var(--primary-bg) !important;
+  color: var(--primary-text) !important;
+}
+
+html.dark-theme .navbar,
+html.dark-theme .video-card,
+html.dark-theme button {
+  background-color: var(--secondary-bg) !important;
+  border-color: var(--border-color) !important;
+}

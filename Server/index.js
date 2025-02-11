@@ -14,6 +14,7 @@ import { conn } from './db.js';
 import { errorHandler } from './middleware/error.js';
 import fileUpload from "express-fileupload";
 import Ffmpeg from "fluent-ffmpeg";
+import get_theme from './Routes/theme.js'
 // import Video from "../Server/models/Video.js"
 
 dotenv.config(); // Ensure this is at the top to load environment variables
@@ -125,6 +126,7 @@ app.use(bodyParser.json())
 app.use('/user', userRoutes)
 app.use('/video', videoRoutes)
 app.use('/comment', commentRoutes)
+app.use(`/get_theme`,get_theme)
 
 // Add this after your routes
 app.use(errorHandler);
@@ -134,6 +136,7 @@ app.use((err, req, res, next) => {
     console.error('Error:', err);
     res.status(500).json({ message: err.message });
 });
+
 
 // Add this route for debugging
 app.get('/check-video/:filename', (req, res) => {

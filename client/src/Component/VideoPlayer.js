@@ -62,6 +62,7 @@ const VideoPlayer = ({ baseFilename, quality }) => {
       ref={containerRef}
       style={{
         width: '100%',
+        height: '100%',
         maxWidth: '800px',
         margin: '0 auto'
       }}

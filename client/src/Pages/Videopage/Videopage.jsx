@@ -29,6 +29,8 @@ const Videopage = () => {
 
   return (
     <div className="video-container">
+      <div className="quality-selector">
+      </div>
       <div className="quality-controls">
         <select
           value={selectedQuality}
@@ -39,16 +41,19 @@ const Videopage = () => {
           <option value="720p">720p</option>
           <option value="1080p">1080p</option>
         </select>
+
       </div>
 
-      <VideoPlayer
-        baseFilename={baseFilename}
-        quality={selectedQuality}
-      />
+      <div className="video-player-wrapper">
+        <VideoPlayer
+          baseFilename={baseFilename}
+          quality={selectedQuality}
+        />
+      </div>
 
       <h1>{currentVideo.videotitle}</h1>
-      <div className="metadata">
-        <span>{currentVideo.views} views</span>
+      <div className="video_metadata">
+        <span>{currentVideo.views} views  </span>
         <span>
           Uploaded {new Date(currentVideo.createdAt).toLocaleDateString()}
         </span>

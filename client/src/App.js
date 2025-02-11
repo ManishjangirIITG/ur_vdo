@@ -19,6 +19,7 @@ import axios from 'axios';
 import Videopage from './Pages/Videopage/Videopage.jsx';
 import VideoList from './Component/VideoList.js';
 import VideoDetail from './Component/VideoDetail.js';
+import { ThemeHandler } from './Component/ThemeHandler.jsx';
 
 axios.defaults.baseURL = 'http://localhost:5000';
 
@@ -28,7 +29,6 @@ function App() {
   });
   const dispatch = useDispatch()
 
-  
   useEffect(() => {
     dispatch(fetchallchannel())
     dispatch(getallvideo())
@@ -53,34 +53,37 @@ function App() {
   }, []);
 
   const toggledrawer = () => {
-    if (toggledrawersidebar.display === "none") {
-      settogledrawersidebar({
-        display: "flex",
-      });
-    } else {
-      settogledrawersidebar({
-        display: "none",
-      });
-    }
+    settogledrawersidebar(prev => ({
+      display: prev.display === "none" ? "flex" : "none"
+    }));
   }
+
   const [editcreatechanelbtn, seteditcreatechanelbtn] = useState(false);
   const [videouploadpage, setvideouploadpage] = useState(false);
+  
   return (
     <Router>
-      <Routes>
-        {/* <Route path="/" element={<VideoList />} /> */}
-        {/* <Route path="/" /> */}
-        {/* <Route path="/video/:videoId" element={<Videopage />} /> */}
-      </Routes>
-      {
-        videouploadpage && <Videoupload setvideouploadpage={setvideouploadpage} />
-      }
-      {editcreatechanelbtn && (
-        <Createeditchannel seteditcreatechanelbtn={seteditcreatechanelbtn} />
-      )}
-      <Navbar seteditcreatechanelbtn={seteditcreatechanelbtn} toggledrawer={toggledrawer} />
-      <Drawersliderbar toggledraw={toggledrawer} toggledrawersidebar={toggledrawersidebar} />
-      <Allroutes seteditcreatechanelbtn={seteditcreatechanelbtn} setvideouploadpage={setvideouploadpage} />
+      <ThemeHandler />
+      <div className="app-container">
+        <Navbar 
+          seteditcreatechanelbtn={seteditcreatechanelbtn} 
+          toggledrawer={toggledrawer} 
+        />
+        <Drawersliderbar 
+          toggledraw={toggledrawer} 
+          toggledrawersidebar={toggledrawersidebar} 
+        />
+        
+        {videouploadpage && <Videoupload setvideouploadpage={setvideouploadpage} />}
+        {editcreatechanelbtn && (
+          <Createeditchannel seteditcreatechanelbtn={seteditcreatechanelbtn} />
+        )}
+        
+        <Allroutes 
+          seteditcreatechanelbtn={seteditcreatechanelbtn} 
+          setvideouploadpage={setvideouploadpage} 
+        />
+      </div>
     </Router>
   );
 }
