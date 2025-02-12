@@ -15,10 +15,12 @@ import { errorHandler } from './middleware/error.js';
 import fileUpload from "express-fileupload";
 import Ffmpeg from "fluent-ffmpeg";
 import get_theme from './Routes/theme.js'
+import {locationMiddleware} from "./middleware/location.js";
 // import Video from "../Server/models/Video.js"
 
 dotenv.config(); // Ensure this is at the top to load environment variables
 const app = express();
+app.set('trust proxy', true);
 
 // Connect to MongoDB first
 mongoose.connect(process.env.DB_URL, {
@@ -43,6 +45,7 @@ app.use(cors({
     exposedHeaders: ['Content-Length', 'Content-Range']
 }));
 
+app.use(locationMiddleware);
 app.use(express.json({ limit: "30mb", extended: true }));
 app.use(express.urlencoded({ limit: "30mb", extended: true }));
 

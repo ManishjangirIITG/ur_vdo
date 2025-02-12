@@ -41,7 +41,7 @@ export const getLocation = async (ip) => {
                   ?.split(':')[0]
                   .trim()
       );
-      return hour >= 10 && hour < 12;
+      return hour >= 0 && hour < 24;
     } catch {
       return false; // Fallback to dark theme
     }

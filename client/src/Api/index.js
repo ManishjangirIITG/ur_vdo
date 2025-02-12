@@ -166,7 +166,7 @@ export const getVideoStream = (baseFilename, quality) =>{
   });
 }
 
-export const get_theme = (ip) => API.get(`/get_theme`)
+export const get_theme = (ip) => API.get(`/get_theme/`)
 
 export const postcomment = (commentdata) => API.post('/comment/post', commentdata)
 export const deletecomment = (id) => API.delete(`/comment/delete/${id}`)
