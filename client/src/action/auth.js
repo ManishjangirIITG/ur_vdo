@@ -1,12 +1,27 @@
-import * as api from "../Api";
-import { setcurrentuser } from "./currentuser";
+import * as api from '../Api';
 
-export const login=(authdata)=>async(dispatch)=>{
-    try {
-        const {data}=await api.login(authdata);
-        dispatch({type:"AUTH",data})
-        dispatch(setcurrentuser(JSON.parse(localStorage.getItem('Profile'))))
-    } catch (error) {
-        alert(error)
+export const login = (authData) => async (dispatch) => {
+  try {
+    const { data } = await api.login(authData);
+    if (data.requiresOTP) {
+      return { requiresOTP: true, method: data.method };
+    } else {
+      dispatch({ type: 'AUTH', data });
+      return data;
     }
-}
+  } catch (error) {
+    console.log(error);
+    throw error;
+  }
+};
+
+export const verifyOTP = (otpData) => async (dispatch) => {
+  try {
+    const { data } = await api.verifyOTP(otpData);
+    dispatch({ type: 'AUTH', data });
+    return data;
+  } catch (error) {
+    console.log(error);
+    throw error;
+  }
+};

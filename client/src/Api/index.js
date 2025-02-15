@@ -13,6 +13,13 @@ export const API = axios.create({
 // Add this near the top of your file
 const pendingRequests = new Map();
 
+API.interceptors.request.use((req) => {
+  if (localStorage.getItem('Profile')) {
+    req.headers.Authorization = `Bearer ${JSON.parse(localStorage.getItem('Profile')).token}`;
+  }
+  return req;
+});
+
 API.interceptors.request.use((config) => {
   const requestKey = `${config.method}:${config.url}:${JSON.stringify(config.data)}`;
   if (pendingRequests.has(requestKey)) {
@@ -150,8 +157,54 @@ export const streamVideoRange = (filename, start, end) => {
   });
 };
 
+// Simplify request interceptor
+API.interceptors.request.use(config => {
+  const profile = JSON.parse(localStorage.getItem('Profile'));
+  if (profile?.token) {
+    config.headers.Authorization = `Bearer ${profile.token}`;
+  }
+  config.withCredentials = true; // Add this for session cookies
+  return config;
+});
+
+// Add proper error handling
+API.interceptors.response.use(
+  response => response,
+  error => {
+      if (error.response?.status === 400) {
+          return Promise.reject({
+              payload: {
+                  status: 400,
+                  ...error.response.data
+              }
+          });
+      }
+      return Promise.reject(error);
+  }
+);
+
+
 export const getvideodetails = (filename) => API.get(`video/details/${filename}`);
-export const login = (authdata) => API.post("/user/login", authdata);
+export const checkLoginRequirements = () => API.get('/auth/check-login-requirements');
+
+export const login = (credentials) => async (dispatch) => {
+  try {
+    const { data } = await API.post('/auth/login', credentials);
+    return dispatch({ type: 'LOGIN_SUCCESS', payload: data });
+  } catch (error) {
+    return dispatch({ type: 'LOGIN_ERROR', error });
+  }
+};
+
+export const verifyOTP = (otpData) => async (dispatch) => {
+  try {
+    const { data } = await API.post('/auth/verify-otp', otpData);
+    return dispatch({ type: 'VERIFY_OTP_SUCCESS', payload: data });
+  } catch (error) {
+    return dispatch({ type: 'VERIFY_OTP_ERROR', error });
+  }
+};
+
 export const updatechaneldata = (id, updatedata) => API.patch(`/user/update/${id}`, updatedata)
 export const fetchallchannel = () => API.get("/user/getallchannel");
 
@@ -160,7 +213,7 @@ export const getvideos = () => API.get("/video/videos");
 export const likevideo = (id, Like) => API.patch(`/video/like/${id}`, { Like });
 export const viewsvideo = (id) => API.patch(`/video/view/${id}`);
 export const viewvideo = (filename, quality) => API.get(`/video/stream/${filename}/${quality}`);
-export const getVideoStream = (baseFilename, quality) =>{
+export const getVideoStream = (baseFilename, quality) => {
   API.get(`/video/stream/${baseFilename}/${quality}`, {
     responseType: 'blob' // Important for streaming
   });
@@ -184,17 +237,3 @@ export const deletelikedvideo = (videoid, viewer) => API.delete(`/video/deleteli
 export const addtowatchlater = (watchlaterdata) => API.post('/video/watchlater', watchlaterdata)
 export const getallwatchlater = () => API.get('/video/getallwatchlater')
 export const deletewatchlater = (videoid, viewer) => API.delete(`/video/deletewatchlater/${videoid}/${viewer}`)
-
-// API.interceptors.response.use(
-//   (response) => response,
-//   (error) => {
-//     if (error.response && error.response.status === 404) {
-//       console.error('Video not found');
-//       // Handle 404 error (e.g., show a user-friendly message)
-//     } else if (error.code === 'ECONNABORTED') {
-//       console.error('Request timed out');
-//       // Handle timeout error
-//     }
-//     return Promise.reject(error);
-//   }
-// );

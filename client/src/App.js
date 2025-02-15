@@ -20,6 +20,8 @@ import Videopage from './Pages/Videopage/Videopage.jsx';
 import VideoList from './Component/VideoList.js';
 import VideoDetail from './Component/VideoDetail.js';
 import { ThemeHandler } from './Component/ThemeHandler.jsx';
+import './styles/dark-theme.css';
+import './styles/white-theme.css';
 
 axios.defaults.baseURL = 'http://localhost:5000';
 

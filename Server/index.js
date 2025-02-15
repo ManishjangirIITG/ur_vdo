@@ -15,7 +15,9 @@ import { errorHandler } from './middleware/error.js';
 import fileUpload from "express-fileupload";
 import Ffmpeg from "fluent-ffmpeg";
 import get_theme from './Routes/theme.js'
-import {locationMiddleware} from "./middleware/location.js";
+import authroutes from './Routes/auth.js'
+import { locationMiddleware } from "./middleware/location.js";
+import session from 'express-session';
 // import Video from "../Server/models/Video.js"
 
 dotenv.config(); // Ensure this is at the top to load environment variables
@@ -34,7 +36,7 @@ mongoose.connect(process.env.DB_URL, {
     .catch((err) => {
         console.error('MongoDB connection error:', err);
         process.exit(1);
-});
+    });
 
 // CORS configuration with specific options
 app.use(cors({
@@ -44,6 +46,17 @@ app.use(cors({
     allowedHeaders: ['Content-Type', 'Authorization'],
     exposedHeaders: ['Content-Length', 'Content-Range']
 }));
+
+app.use(session({
+    secret: process.env.SESSION_SECRET,
+    resave: true, // Changed for OTP flow
+    saveUninitialized: true,
+    cookie: {
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 600000, // 10 minutes
+      sameSite: 'lax'
+    }
+  }));
 
 app.use(locationMiddleware);
 app.use(express.json({ limit: "30mb", extended: true }));
@@ -125,21 +138,22 @@ app.use((req, res, next) => {
     next();
 });
 
+
 app.use(bodyParser.json())
 app.use('/user', userRoutes)
 app.use('/video', videoRoutes)
 app.use('/comment', commentRoutes)
-app.use(`/get_theme`,get_theme)
+app.use(`/get_theme`, get_theme)
+app.use('/auth', authroutes)
 
 // Add this after your routes
 app.use(errorHandler);
 
 // Update your error handling middleware
 app.use((err, req, res, next) => {
-    console.error('Error:', err);
-    res.status(500).json({ message: err.message });
+    console.error(err.stack);
+    res.status(500).json({ message: 'Something went wrong!', error: err.message });
 });
-
 
 // Add this route for debugging
 app.get('/check-video/:filename', (req, res) => {

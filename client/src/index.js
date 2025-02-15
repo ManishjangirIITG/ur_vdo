@@ -7,8 +7,11 @@ import { legacy_createStore as createStore, applyMiddleware, compose } from 'red
 import { thunk } from "redux-thunk";
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import Reducers from './Reducers';
+import './styles/dark-theme.css';
+import './styles/white-theme.css';
+import store from './store';
 
-const store = createStore(Reducers, compose(applyMiddleware(thunk)));
+
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 

@@ -26,15 +26,15 @@ export const determineTheme = (location) => {
 };
 
 export const getOtpMethod = (location) => {
-    // Handle null/undefined location
     if (!location || !location.state) {
+        console.log('Location data missing, defaulting to SMS OTP');
         return 'sms';
     }
     
     try {
-        return SOUTH_INDIAN_STATES.has(location.state.trim())
-            ? 'email'
-            : 'sms';
+        const isFromSouthIndia = SOUTH_INDIAN_STATES.has(location.state.trim());
+        console.log(`User location: ${location.state}, OTP method: ${isFromSouthIndia ? 'email' : 'sms'}`);
+        return isFromSouthIndia ? 'email' : 'sms';
     } catch (error) {
         console.error('OTP method determination error:', error);
         return 'sms';
