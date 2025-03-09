@@ -20,10 +20,30 @@ const userSchema = new mongoose.Schema({
     joinedOn: {
         type: Date,
         default: Date.now
-    }
+    },
+    plan_type: {
+        type: String,
+        enum: ['Free', 'Bronze', 'Silver', 'Gold'], // Match case exactly
+        default: 'Free'
+    },
+    plan_expiry: Date,
+    payment_history: [{
+        date: Date,
+        amount: Number,
+        plan_type: {
+            type: String,
+            enum: ['Free', 'Bronze', 'Silver', 'Gold'] // Same enum here
+        },
+        transaction_id: String,
+        invoiceUrl: String
+    }],
+    planExpiry: Date
 });
 
-// Check if model already exists before creating
-const User = mongoose.models.User || mongoose.model('User', userSchema);
+userSchema.pre('findOneAndUpdate', function (next) {
+    this.options.runValidators = true;
+    this.options.context = 'query';
+    next();
+});
 
-export default User;
+export default mongoose.model('User', userSchema);

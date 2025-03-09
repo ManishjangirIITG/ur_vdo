@@ -11,6 +11,9 @@
 # production
 /build
 
+# invoices
+/invoices
+
 # misc
 .DS_Store
 .env

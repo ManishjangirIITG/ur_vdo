@@ -58,12 +58,7 @@ export const viewvideo = (filename) => async (dispatch) => {
       throw new Error('Video data not found in response');
     }
 
-    dispatch({
-      type: 'VIEW_VIDEO_SUCCESS',
-      payload: {
-        ...data,
-      }
-    });
+    dispatch({ type: 'VIEW_VIDEO_SUCCESS', payload: data });
 
   } catch (error) {
     const errorMessage = error.response?.data?.error ||

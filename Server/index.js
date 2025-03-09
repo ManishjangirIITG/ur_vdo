@@ -18,6 +18,10 @@ import get_theme from './Routes/theme.js'
 import authroutes from './Routes/auth.js'
 import { locationMiddleware } from "./middleware/location.js";
 import session from 'express-session';
+import Razorpay from 'razorpay'
+import PDFDocument from 'pdfkit'
+import nodemailer from 'nodemailer'
+import User from './models/auth.js';
 // import Video from "../Server/models/Video.js"
 
 dotenv.config(); // Ensure this is at the top to load environment variables
@@ -52,11 +56,11 @@ app.use(session({
     resave: true, // Changed for OTP flow
     saveUninitialized: true,
     cookie: {
-      secure: process.env.NODE_ENV === 'production',
-      maxAge: 600000, // 10 minutes
-      sameSite: 'lax'
+        secure: process.env.NODE_ENV === 'production',
+        maxAge: 600000, // 10 minutes
+        sameSite: 'lax'
     }
-  }));
+}));
 
 app.use(locationMiddleware);
 app.use(express.json({ limit: "30mb", extended: true }));
@@ -64,6 +68,203 @@ app.use(express.urlencoded({ limit: "30mb", extended: true }));
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+const razorpay = new Razorpay({
+    key_id: process.env.RAZORPAY_KEY_ID,
+    key_secret: process.env.RAZORPAY_KEY_SECRET
+});
+
+// const transporter = nodemailer.createTransport({
+//     service: 'gmail',
+//     auth: {
+//         type: 'OAuth2',
+//         user: process.env.EMAIL_USER,
+//         clientId: process.env.GOOGLE_CLIENT_ID,
+//         clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+//         refreshToken: process.env.GOOGLE_REFRESH_TOKEN,
+//         accessToken: process.env.GOOGLE_ACCESS_TOKEN
+//     }
+// });
+
+const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.GMAIL_APP_PASSWORD
+    },
+    tls: {
+        rejectUnauthorized: false // Temporary fix for local development
+    }
+});
+
+const invoicesDir = path.join(__dirname, 'invoices');
+if (!fs.existsSync(invoicesDir)) {
+    fs.mkdirSync(invoicesDir, { recursive: true });
+}
+
+app.post('/api/create-order', async (req, res) => {
+    try {
+        const order = await razorpay.orders.create({
+            amount: req.body.amount,
+            currency: req.body.currency || 'INR',
+            receipt: `receipt_${Date.now()}`
+        });
+        res.json(order);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+
+app.post('/api/verify-payment', async (req, res) => {
+    try {
+        // 1. Validate payment
+        const payment = await razorpay.payments.fetch(req.body.paymentId);
+
+        if (payment.status !== 'captured') {
+            return res.status(400).json({ error: 'Payment not captured' });
+        }
+
+        const validPlans = ['Free', 'Bronze', 'Silver', 'Gold'];
+        if (!validPlans.includes(req.body.plan)) {
+            return res.status(400).json({ error: 'Invalid plan type' });
+        }
+
+        // 2. Validate user
+        const user = await User.findById(req.body.userId);
+        console.log('user from the api/verify-payment : ', user);
+        if (!user) return res.status(404).json({ error: 'User not found' });
+
+        // 3. Generate invoice
+        const invoicePath = path.join(__dirname, 'invoices', `${Date.now()}_${user._id}.pdf`);
+        const doc = new PDFDocument();
+        const writeStream = fs.createWriteStream(invoicePath);
+
+        // Add error handling for PDF creation
+        writeStream.on('error', (err) => {
+            console.error('PDF write error:', err);
+            throw new Error('Failed to create invoice');
+        });
+
+
+        doc.pipe(writeStream);
+        // PDF content
+        doc.fontSize(20).text('Invoice', { underline: true });
+        doc.fontSize(12).text(`User: ${user.email}`);
+        doc.text(`Plan: ${req.body.plan}`);
+        doc.text(`Amount: ₹${payment.amount / 100}`);
+        doc.text(`Date: ${new Date().toLocaleString()}`);
+        doc.end();
+
+        // Wait for PDF generation to complete
+        await new Promise((resolve, reject) => {
+            writeStream.on('finish', resolve);
+            writeStream.on('error', reject);
+        });
+
+        const updatedUser = await User.findByIdAndUpdate(
+            user._id,
+            {
+                $set: { plan_type: req.body.plan },
+                $push: {
+                    paymentHistory: {
+                        plan_type: req.body.plan,
+                        amount: payment.amount / 100,
+                        transactionId: payment.id,
+                        invoiceUrl: invoicePath
+                    }
+                }
+            },
+            {
+                new: true,
+                runValidators: true,
+                context: 'query' // Add this for proper validation
+            }
+        );
+
+        console.log('Updated User:', updatedUser);
+
+        // 5. Send email
+        const mailOptions = {
+            from: process.env.EMAIL_USER,
+            to: user.email, // Use user's email from DB
+            subject: 'Subscription Activated',
+            html: `<h3>Subscription Confirmation</h3>
+              <p>Plan: ${req.body.plan}</p>
+              <p>Amount: ₹${payment.amount / 100}</p>`,
+            attachments: [{
+                filename: 'invoice.pdf',
+                path: invoicePath
+            }]
+        };
+
+        try {
+            await transporter.sendMail(mailOptions);
+            res.json({ success: true });
+        } catch (error) {
+            console.error('Email sending error:', error);
+        }
+
+        console.log('Request body:', req.body);
+        console.log('Payment status:', payment.status);
+        console.log('User before update:', user);
+        console.log('Update payload:', {
+            plan_type: req.body.plan,
+            payment_history: { ...req.body }
+        });
+
+    } catch (error) {
+        console.error('Payment verification failed:', error);
+        res.status(500).json({
+            error: 'Payment processed but email failed',
+            details: error.message
+        });
+    }
+});
+
+// app.get('/api/me', async (req, res) => {
+//     try {
+//         const user = await User.findById(req.user._id) // Get from auth middleware
+//             .select('-paymentHistory') // Exclude sensitive data
+//             .populate('email');
+
+//         if (!user) return res.status(404).json({ error: 'User not found' });
+//         res.json(user);
+//     } catch (error) {
+//         console.error('Me endpoint error:', error);
+//         res.status(500).json({ error: 'Server error' });
+//     }
+// });
+
+app.get('/api/users/:id', async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id)
+      .select('plan_type payment_history')
+      .lean();
+
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    res.json(user);
+  } catch (error) {
+    console.error('User fetch error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Add temporary test route
+app.get('/test-email', async (req, res) => {
+    try {
+        await transporter.sendMail({
+            to: process.env.EMAIL_USER,
+            subject: 'Test Email',
+            text: 'Email system working!'
+        });
+        res.send('Email sent successfully');
+    } catch (error) {
+        console.error('Email test failed:', error);
+        res.status(500).send(error.message);
+    }
+});
+
 
 // Create uploads directory if it doesn't exist
 const uploadsDir = path.join(__dirname, 'uploads');

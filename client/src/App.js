@@ -9,6 +9,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Drawersliderbar from '../src/Component/Leftsidebar/Drawersliderbar'
 import Createeditchannel from './Pages/Channel/Createeditchannel';
 import Videoupload from './Pages/Videoupload/Videoupload';
+import UpgradePlan from './Pages/UpgradePlan/UpgradePlan';
 import { fetchallchannel } from './action/channeluser';
 import { getallvideo } from './action/video';
 import { getallcomment } from './action/comment';
@@ -26,10 +27,10 @@ import './styles/white-theme.css';
 axios.defaults.baseURL = 'http://localhost:5000';
 
 function App() {
-  const [toggledrawersidebar, settogledrawersidebar] = useState({
-    display: "none"
-  });
-  const dispatch = useDispatch()
+  const [toggledrawersidebar, settogledrawersidebar] = useState({ display: "none" });
+  const [editcreatechanelbtn, seteditcreatechanelbtn] = useState(false);
+  const [videouploadpage, setvideouploadpage] = useState(false);
+  const dispatch = useDispatch();
 
   useEffect(() => {
     dispatch(fetchallchannel())
@@ -58,10 +59,7 @@ function App() {
     settogledrawersidebar(prev => ({
       display: prev.display === "none" ? "flex" : "none"
     }));
-  }
-
-  const [editcreatechanelbtn, seteditcreatechanelbtn] = useState(false);
-  const [videouploadpage, setvideouploadpage] = useState(false);
+  };
   
   return (
     <Router>

@@ -7,6 +7,7 @@ import { useDispatch } from "react-redux"
 import { setcurrentuser } from '../../action/currentuser';
 import { API } from '../../Api/index';
 import { useNavigate } from 'react-router-dom';
+import { FaCrown } from 'react-icons/fa'
 
 const Auth = ({ user, setauthbtn, seteditcreatechanelbtn }) => {
     const dispatch = useDispatch()
@@ -54,7 +55,7 @@ const Auth = ({ user, setauthbtn, seteditcreatechanelbtn }) => {
                 <p className="User_Details">
                     <div className="Chanel_logo_App">
                         <p className="fstChar_logo_App">
-                            {user.result.name ? 
+                            {user.result.name ?
                                 user.result.name.charAt(0).toUpperCase() :
                                 user.result.email.charAt(0).toUpperCase()
                             }
@@ -66,15 +67,20 @@ const Auth = ({ user, setauthbtn, seteditcreatechanelbtn }) => {
                     {user.result.name ? (
                         <Link to={`/channel/${user.result._id}`} className='btn_Auth'>Your Channel</Link>
                     ) : (
-                        <input 
-                            type="submit" 
-                            className='btn_Auth' 
-                            value="Create Your Own Channel" 
+                        <input
+                            type="submit"
+                            className='btn_Auth'
+                            value="Create Your Own Channel"
                             onClick={() => seteditcreatechanelbtn(true)}
                         />
                     )}
+                    <div className="upgrade_plan_button">
+                        <Link to="/upgrade-plan" className="menu_links upgrade-plan-link">
+                            <FaCrown /> Upgrade Plan
+                        </Link>
+                    </div>
                     <div className="btn_Auth" onClick={logout}>
-                        <BiLogOut/>
+                        <BiLogOut />
                         Log Out
                     </div>
                 </div>

@@ -9,18 +9,24 @@ const Videopage = () => {
   const dispatch = useDispatch();
   const [selectedQuality, setSelectedQuality] = useState('720p');
 
-  const { currentVideo, loading, error } = useSelector(state => ({
-    currentVideo: state.video.currentVideo,
-    loading: state.video.loading,
-    error: state.video.error
-  }));
+  const videoState = useSelector((state) => state.video) || {};
+  const { currentVideo, loading, error } = videoState;
+  
+  // Compute baseFilename by removing file extension (if currentVideo exists)
+  const baseFilename = currentVideo?.filename
+    ? currentVideo.filename.replace(/\.[^/.]+$/, "")
+    : "";
 
-  const baseFilename = currentVideo?.filename?.replace(/\.[^/.]+$/, "");
+  console.log("videoState is : ",videoState)
+  console.log("currentVideo from videopage : ",currentVideo);
+  console.log("basefilename is : ",baseFilename)
 
   useEffect(() => {
+    console.log('fileaname from the useEffect of videopage : ',filename)
     if (filename) {
       dispatch(viewvideo(filename));
     }
+    console.log('basefilename from videopage : ',baseFilename,'quality from the videopage : ',selectedQuality)
   }, [filename, dispatch]);
 
   if (loading) return <div>Loading...</div>;
